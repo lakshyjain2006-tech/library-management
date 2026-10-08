@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}
+  {% if view == 'all' %}All Issues
+  {% elif view == 'my' %}My Books
+  {% else %}Issue a Book
+  {% endif %} – Acropolis Library Management
+{% endblock %}
+
+{% block content %}
+
+{% if view == 'all' or view == 'my' %}
+<!-- ── Issues List ── -->
+<div class="page-header">
+  <div>
+    <h1>{{ '📊 All Issues' if view == 'all' else '📋 My Borrowed Books' }}</h1>
+    <p>{{ 'Full borrowing history across all members' if view == 'all' else 'Books currently or previously borrowed by you' }}</p>
+  </div>
+  {% if view == 'all' %}
+  <div class="filter-tabs">
+    <a href="?status=all"      class="btn btn-sm {{ 'btn-primary' if status_filter == 'all'      else 'btn-secondary' }}">All</a>
+    <a href="?status=issued"   class="btn btn-sm {{ 'btn-primary' if status_filter == 'issued'   else 'btn-secondary' }}">📖 Active</a>
+    <a href="?status=pending"  class="btn btn-sm {{ 'btn-primary' if status_filter == 'pending'  else 'btn-secondary' }}">🕐 Pending</a>
+    <a href="?status=returned" class="btn btn-sm {{ 'btn-primary' if status_filter == 'returned' else 'btn-secondary' }}">✓ Returned</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if issues %}
+<div class="table-wrapper">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        {% if view == 'all' %}<th>Member</th>{% endif %}
+        <th>Book</th>
+        <th>Issued On</th>
+        <th>Due Date</th>
+        <th>Returned On</th>
+        <th>Status</th>
+        <th>Fine (₹)</th>
+        {% if view == 'my' %}<th>Action</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for issue in issues %}
+      <tr class="{{ 'row-overdue' if issue.is_overdue() else '' }}">
+        <td class="text-muted">{{ loop.index }}</td>
+        {% if view == 'all' %}
+          <td><span class="badge badge-info">{{ issue.user.username }}</span></td>
+        {% endif %}
+        <td class="fw-bold">{{ issue.book.title }}</td>
+        <td>{{ issue.issue_date.strftime('%d %b %Y') }}</td>
+        <td>{{ issue.due_date.strftime('%d %b %Y') }}</td>
+        <td>{{ issue.return_date.strftime('%d %b %Y') if issue.return_date else '—' }}</td>
+        <td>
+          {% if issue.status == 'returned' %}
+            <span class="badge badge-success">✓ Returned</span>
+          {% elif issue.status == 'pending_return' %}
+            <span class="badge badge-pending">🕐 Pending Verification</span>
+          {% elif issue.is_overdue() %}
+            <span class="badge badge-danger">⚠ Overdue</span>
+          {% else %}
+            <span class="badge badge-warning">📖 Issued</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if issue.fine %}
+            <span style="color:var(--danger-text);font-weight:700;">{{ '%.2f' | format(issue.fine) }}</span>
+          {% else %}
+            <span class="text-muted">0.00</span>
+          {% endif %}
+        </td>
+        {% if view == 'my' %}
+        <td>
+          {% if issue.status == 'issued' %}
+            <form method="POST" action="{{ url_for('issues.request_return', issue_id=issue.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-warning"
+                onclick="return confirm('Request to return "{{ issue.book.title }}"? An admin will verify the physical return.');">
+                📬 Request Return
+              </button>
+            </form>
+          {% elif issue.status == 'pending_return' %}
+            <span class="badge badge-pending">🕐 Awaiting Admin</span>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📭</div>
+  <p>No records found.</p>
+</div>
+{% endif %}
+
+{% else %}
+<!-- ── Issue Book Form ── -->
+<div class="page-header">
+  <div>
+    <h1>📤 Issue a Book</h1>
+    <p>Assign a book to a library member</p>
+  </div>
+  <a href="{{ url_for('books.dashboard') }}" class="btn btn-secondary">← Back</a>
+</div>
+
+<div class="card form-card">
+  {% if books %}
+  <form method="POST" action="{{ url_for('issues.issue_book') }}">
+    <div class="form-group">
+      <label for="user_id">Select Member *</label>
+      <select id="user_id" name="user_id" class="form-control" required>
+        <option value="">— Choose a member —</option>
+        {% for member in members %}
+          <option value="{{ member.id }}">{{ member.username }}  ·  {{ member.email }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="book_id">Select Book *</label>
+      <select id="book_id" name="book_id" class="form-control" required>
+        <option value="">— Choose a book —</option>
+        {% for book in books %}
+          <option value="{{ book.id }}">
+            {{ book.title }}  ·  {{ book.author }}
+            ({{ book.available_copies }} cop{{ 'y' if book.available_copies == 1 else 'ies' }} left)
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.5rem;">
+      <button type="submit" class="btn btn-primary">Issue Book</button>
+      <a href="{{ url_for('books.dashboard') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📭</div>
+    <p>No books are currently available for issue.</p>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

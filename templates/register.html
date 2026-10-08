@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Register – Acropolis Library Management{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+
+    <div class="auth-logo-container">
+      <img src="{{ url_for('static', filename='images/logo_transparent.png') }}" alt="Acropolis Library Management" class="auth-logo-img" />
+    </div>
+    <p class="auth-subtitle">Join the library today — it's free</p>
+
+    <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" class="form-control"
+          placeholder="Choose a username" required autocomplete="username" />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" class="form-control"
+          placeholder="you@example.com" required autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-group">
+          <input type="password" id="password" name="password" class="form-control"
+            placeholder="Min. 6 characters" required autocomplete="new-password" minlength="6" />
+          <button type="button" class="input-toggle" onclick="togglePw('password',this)" aria-label="Show/hide">👁</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirm_password">Confirm Password</label>
+        <div class="input-group">
+          <input type="password" id="confirm_password" name="confirm_password" class="form-control"
+            placeholder="Repeat your password" required autocomplete="new-password" />
+          <button type="button" class="input-toggle" onclick="togglePw('confirm_password',this)" aria-label="Show/hide">👁</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+    </form>
+
+    <hr class="divider" />
+    <p class="auth-footer">
+      Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>
+    </p>
+  </div>
+</div>
+
+<script>
+function togglePw(id, btn) {
+  const el = document.getElementById(id);
+  const show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+}
+</script>
+{% endblock %}

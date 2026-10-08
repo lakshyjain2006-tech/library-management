@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Pending Returns – LibraryMS{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>🕐 Pending Return Requests</h1>
+    <p>Verify that members have physically returned their books before confirming</p>
+  </div>
+  <a href="{{ url_for('issues.all_issues') }}" class="btn btn-secondary">← All Issues</a>
+</div>
+
+{% if pending %}
+
+<!-- Summary banner -->
+<div class="pending-banner">
+  <span class="pending-banner-icon">📬</span>
+  <div>
+    <strong>{{ pending | length }} return request{{ 's' if pending | length != 1 }}</strong> waiting for your verification.
+    Check the physical book before confirming.
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Member</th>
+        <th>Book</th>
+        <th>Issued On</th>
+        <th>Due Date</th>
+        <th>Return Requested</th>
+        <th>Overdue</th>
+        <th>Est. Fine (₹)</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for issue in pending %}
+      <tr class="{{ 'row-overdue' if issue.is_overdue() else '' }}">
+        <td class="text-muted">{{ loop.index }}</td>
+
+        <td>
+          <div class="member-cell">
+            <span class="avatar">{{ issue.user.username[0].upper() }}</span>
+            <span class="fw-bold">{{ issue.user.username }}</span>
+          </div>
+        </td>
+
+        <td>
+          <div>
+            <span class="fw-bold">{{ issue.book.title }}</span><br/>
+            <span class="text-muted" style="font-size:.8rem;">{{ issue.book.author }}</span>
+          </div>
+        </td>
+
+        <td>{{ issue.issue_date.strftime('%d %b %Y') }}</td>
+        <td>{{ issue.due_date.strftime('%d %b %Y') }}</td>
+
+        <td>
+          {{ issue.return_date.strftime('%d %b %Y, %H:%M') if issue.return_date else '—' }}
+        </td>
+
+        <td>
+          {% if issue.is_overdue() %}
+            {% set days = ((issue.return_date or now) - issue.due_date).days %}
+            <span class="badge badge-danger">⚠ {{ days }} day{{ 's' if days != 1 }}</span>
+          {% else %}
+            <span class="badge badge-success">✓ On time</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% set est = issue.calculate_fine() %}
+          {% if est > 0 %}
+            <span style="color:var(--danger-text);font-weight:700;">{{ '%.2f' | format(est) }}</span>
+          {% else %}
+            <span class="text-muted">0.00</span>
+          {% endif %}
+        </td>
+
+        <td>
+          <div class="action-btns">
+            <!-- Confirm -->
+            <form method="POST"
+                  action="{{ url_for('issues.confirm_return', issue_id=issue.id) }}"
+                  style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-success"
+                onclick="return confirm('Confirm physical return of "{{ issue.book.title }}" from {{ issue.user.username }}?');">
+                ✓ Confirm
+              </button>
+            </form>
+
+            <!-- Reject -->
+            <form method="POST"
+                  action="{{ url_for('issues.reject_return', issue_id=issue.id) }}"
+                  style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-reject"
+                onclick="return confirm('Reject this return request? The book will remain issued to {{ issue.user.username }}.');">
+                ✗ Reject
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">✅</div>
+  <p>No pending return requests. All clear!</p>
+</div>
+{% endif %}
+
+{% endblock %}

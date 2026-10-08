@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Acropolis Library Management{% endblock %}</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+  <!-- ── Navbar ─────────────────────────────────────────── -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <a href="{{ url_for('books.dashboard') }}" class="brand-link">
+        <img src="{{ url_for('static', filename='images/logo_transparent.png') }}" alt="Acropolis Library Management" class="brand-logo" />
+      </a>
+    </div>
+
+    <!-- Hamburger (mobile) -->
+    <button class="nav-hamburger" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
+    <ul class="nav-links" id="navLinks">
+      {% if current_user.is_authenticated %}
+        <li><a href="{{ url_for('books.dashboard') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('books.list_books') }}">Books</a></li>
+        {% if current_user.is_admin() %}
+          <li><a href="{{ url_for('books.add_book') }}">Add Book</a></li>
+          <li><a href="{{ url_for('issues.issue_book') }}">Issue Book</a></li>
+          <li><a href="{{ url_for('issues.all_issues') }}">All Issues</a></li>
+        {% else %}
+          <li><a href="{{ url_for('issues.my_issues') }}">My Issues</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('auth.logout') }}" class="btn-logout">
+          {% if current_user.is_admin() %}🔐{% else %}👤{% endif %}
+          {{ current_user.username }} &nbsp;·&nbsp; Logout
+        </a></li>
+      {% else %}
+        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+        <li><a href="{{ url_for('auth.register') }}">Register</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <!-- ── Flash Messages ─────────────────────────────────── -->
+  <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}" role="alert">
+            <span>{{ message }}</span>
+            <button class="alert-close" aria-label="Dismiss" onclick="this.parentElement.remove()">✕</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- ── Page Content ───────────────────────────────────── -->
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 Acropolis Library Management System &nbsp;·&nbsp; Built with Flask</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

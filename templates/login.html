@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}Login – Acropolis Library Management{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+
+    <div class="auth-logo-container">
+      <img src="{{ url_for('static', filename='images/logo_transparent.png') }}" alt="Acropolis Library Management" class="auth-logo-img" />
+    </div>
+    <p class="auth-subtitle">Sign in to continue</p>
+
+    <!-- Role Tabs -->
+    <div class="login-tabs" role="tablist">
+      <button
+        class="login-tab {% if active_tab != 'admin' %}active{% endif %}"
+        id="tab-member" role="tab"
+        aria-selected="{{ 'true' if active_tab != 'admin' else 'false' }}"
+        aria-controls="panel-member" type="button"
+        onclick="switchTab('member')">
+        🎓 Member
+      </button>
+      <button
+        class="login-tab {% if active_tab == 'admin' %}active{% endif %}"
+        id="tab-admin" role="tab"
+        aria-selected="{{ 'true' if active_tab == 'admin' else 'false' }}"
+        aria-controls="panel-admin" type="button"
+        onclick="switchTab('admin')">
+        🔐 Admin
+      </button>
+    </div>
+
+    <!-- Member Panel -->
+    <div class="tab-panel" id="panel-member" role="tabpanel"
+         {% if active_tab == 'admin' %}style="display:none"{% endif %}>
+
+      <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+        <div class="form-group">
+          <label for="m-username">Username</label>
+          <input type="text" id="m-username" name="username" class="form-control"
+            placeholder="Enter your username" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="m-password">Password</label>
+          <div class="input-group">
+            <input type="password" id="m-password" name="password" class="form-control"
+              placeholder="Enter your password" required autocomplete="current-password" />
+            <button type="button" class="input-toggle" onclick="togglePw('m-password',this)" aria-label="Show/hide password">👁</button>
+          </div>
+        </div>
+        <div class="form-group form-check">
+          <input type="checkbox" id="m-remember" name="remember" />
+          <label for="m-remember">Keep me signed in</label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+      </form>
+
+      <hr class="divider" />
+      <p class="auth-footer">
+        New here? <a href="{{ url_for('auth.register') }}">Create an account</a>
+      </p>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="tab-panel" id="panel-admin" role="tabpanel"
+         {% if active_tab != 'admin' %}style="display:none"{% endif %}>
+
+      <form method="POST" action="{{ url_for('auth.admin_login') }}" novalidate>
+        <div class="form-group">
+          <label for="a-username">Admin Username</label>
+          <input type="text" id="a-username" name="username" class="form-control"
+            placeholder="Enter admin username" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="a-password">Admin Password</label>
+          <div class="input-group">
+            <input type="password" id="a-password" name="password" class="form-control"
+              placeholder="Enter admin password" required autocomplete="current-password" />
+            <button type="button" class="input-toggle" onclick="togglePw('a-password',this)" aria-label="Show/hide password">👁</button>
+          </div>
+        </div>
+        <div class="form-group form-check">
+          <input type="checkbox" id="a-remember" name="remember" />
+          <label for="a-remember">Keep me signed in</label>
+        </div>
+        <button type="submit" class="btn btn-admin btn-block">Sign In as Admin</button>
+      </form>
+
+      <p class="admin-note mt-2">🔒 Restricted access. Authorised personnel only.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function switchTab(role) {
+  ['member','admin'].forEach(r => {
+    document.getElementById('panel-' + r).style.display = r === role ? '' : 'none';
+    const t = document.getElementById('tab-' + r);
+    t.classList.toggle('active', r === role);
+    t.setAttribute('aria-selected', r === role ? 'true' : 'false');
+  });
+}
+function togglePw(id, btn) {
+  const el = document.getElementById(id);
+  const show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+}
+</script>
+{% endblock %}

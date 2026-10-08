@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard – Acropolis Library Management{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1>{% if current_user.is_admin() %}⚙️{% else %}👋{% endif %} Dashboard</h1>
+    <p>
+      Welcome back, <strong>{{ current_user.username }}</strong>
+      {% if current_user.is_admin() %}<span class="badge badge-admin">Admin</span>{% endif %}
+    </p>
+  </div>
+</div>
+
+<!-- ── Stats ───────────────────────────────────────────────── -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">📚</div>
+    <div class="stat-info">
+      <h3>{{ total_books }}</h3>
+      <p>Total Books</p>
+    </div>
+  </div>
+
+  <div class="stat-card stat-card--success">
+    <div class="stat-icon">📤</div>
+    <div class="stat-info">
+      <h3>{{ total_issued }}</h3>
+      <p>Currently Issued</p>
+    </div>
+  </div>
+
+  <div class="stat-card stat-card--{{ 'danger' if overdue_count > 0 else 'warning' }}">
+    <div class="stat-icon">⚠️</div>
+    <div class="stat-info">
+      <h3>{{ overdue_count }}</h3>
+      <p>Overdue</p>
+    </div>
+  </div>
+
+  {% if current_user.is_admin() %}
+  <div class="stat-card stat-card--pending {{ 'stat-card--pulse' if pending_count > 0 else '' }}">
+    <div class="stat-icon">🕐</div>
+    <div class="stat-info">
+      <h3>{{ pending_count }}</h3>
+      <p>Pending Returns</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Pending Returns Alert (admin only) ─────────────────── -->
+{% if current_user.is_admin() and pending_count > 0 %}
+<div class="pending-banner" style="margin-bottom:1.5rem;">
+  <span class="pending-banner-icon">📬</span>
+  <div>
+    <strong>{{ pending_count }} return request{{ 's' if pending_count != 1 }}</strong>
+    waiting for your verification.
+    <a href="{{ url_for('issues.pending_returns') }}" style="margin-left:.5rem;">
+      Review now →
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Quick Actions ──────────────────────────────────────── -->
+<div class="section">
+  <p class="section-title">Quick Actions</p>
+  <div class="action-grid">
+    <a href="{{ url_for('books.list_books') }}" class="action-card">
+      <div class="action-icon">🔍</div>
+      Browse Books
+    </a>
+
+    {% if current_user.is_admin() %}
+      <a href="{{ url_for('books.add_book') }}" class="action-card">
+        <div class="action-icon">➕</div>
+        Add New Book
+      </a>
+      <a href="{{ url_for('issues.issue_book') }}" class="action-card">
+        <div class="action-icon">📤</div>
+        Issue a Book
+      </a>
+      <a href="{{ url_for('issues.all_issues') }}" class="action-card">
+        <div class="action-icon">📊</div>
+        All Issues
+      </a>
+      <a href="{{ url_for('issues.pending_returns') }}" class="action-card {{ 'action-card--alert' if pending_count > 0 else '' }}">
+        <div class="action-icon">🕐</div>
+        Pending Returns
+        {% if pending_count > 0 %}
+          <span class="action-badge">{{ pending_count }}</span>
+        {% endif %}
+      </a>
+    {% else %}
+      <a href="{{ url_for('issues.my_issues') }}" class="action-card">
+        <div class="action-icon">📋</div>
+        My Borrowed Books
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── Recent Activity ────────────────────────────────────── -->
+<div class="section">
+  <p class="section-title">Recent Activity</p>
+
+  {% if recent_issues %}
+  <div class="table-wrapper">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Book</th>
+          <th>Issued On</th>
+          <th>Due Date</th>
+          <th>Status</th>
+          <th>Fine</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for issue in recent_issues %}
+        <tr class="{{ 'row-overdue' if issue.is_overdue() else '' }}">
+          <td class="fw-bold">{{ issue.book.title }}</td>
+          <td>{{ issue.issue_date.strftime('%d %b %Y') }}</td>
+          <td>{{ issue.due_date.strftime('%d %b %Y') }}</td>
+          <td>
+            {% if issue.status == 'returned' %}
+              <span class="badge badge-success">✓ Returned</span>
+            {% elif issue.status == 'pending_return' %}
+              <span class="badge badge-pending">🕐 Pending</span>
+            {% elif issue.is_overdue() %}
+              <span class="badge badge-danger">⚠ Overdue</span>
+            {% else %}
+              <span class="badge badge-warning">📖 Issued</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if issue.fine %}
+              <span style="color:var(--danger-text);font-weight:600;">₹{{ '%.2f' | format(issue.fine) }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if issue.status == 'issued' %}
+              <form method="POST" action="{{ url_for('issues.request_return', issue_id=issue.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-warning"
+                  onclick="return confirm('Request to return this book? An admin will verify.');">
+                  📬 Return
+                </button>
+              </form>
+            {% elif issue.status == 'pending_return' %}
+              <span class="badge badge-pending">🕐 Awaiting Admin</span>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📭</div>
+    <p>No recent activity yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
