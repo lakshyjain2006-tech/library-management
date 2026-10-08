@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_login import LoginManager
 from config import Config
@@ -41,16 +42,39 @@ def create_app():
 
 def _seed_admin():
     """Create a default admin account if none exists."""
+
     if not User.query.filter_by(role='admin').first():
+
+        admin_username = os.environ.get(
+            "ADMIN_USERNAME",
+            "admin"
+        )
+
+        admin_password = os.environ.get(
+            "ADMIN_PASSWORD",
+            "Admin@123"
+        )
+
+        admin_email = os.environ.get(
+            "ADMIN_EMAIL",
+            "admin@library.com"
+        )
+
         admin = User(
-            username='admin',
-            email='admin@library.com',
+            username=admin_username,
+            email=admin_email,
             role='admin'
         )
-        admin.set_password('Admin@123')
+
+        admin.set_password(admin_password)
+
         db.session.add(admin)
         db.session.commit()
-        print('[INFO] Default admin created  →  username: admin  |  password: Admin@123')
+
+        print(
+            f"[INFO] Default admin created → "
+            f"username: {admin_username}"
+        )
 
 
 from flask import redirect, url_for
